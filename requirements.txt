@@ -1,59 +1,32 @@
-# Azure AI SDK and related dependencies
-azure-ai-projects
-azure-cognitiveservices-speech
-azure-common
-azure-core
-azure-identity
-azure-mgmt-core
-azure-mgmt-resource
-azure-storage-blob
+# Core ML and Data Processing Dependencies
+pyspark>=3.5.0
+pandas>=2.0.0
+numpy>=1.24.0,<2.0.0
+scikit-learn>=1.0.0
 
-# ML and Data Processing
-pandas
-pyspark
-py4j
-numpy
-databricks-cli
-databricks-connect
-dbx
-distlib
-urllib3
+# MLOps and Experiment Tracking
+mlflow>=2.0.0
 
-# Other dependencies
-azure-ai-translation-text
-azure-ai-vision-face
-azure-ai-vision-imageanalysis
-certifi
-charset-normalizer
-click
-colorama
-contourpy
-cycler
-filelock
-Flask
-Flask-Cors
-fonttools
-idna
-isodate
-itsdangerous
-Jinja2
-kiwisolver
-MarkupSafe
-matplotlib
-msrest
-oauthlib
-opencv-python
-packaging
-pillow
-platformdirs
-pyparsing
-python-dateutil
-python-dotenv
-pytz
-requests
-requests-oauthlib
-six
-typing_extensions
-tzdata
-virtualenv
-Werkzeug
+# Hyperparameter Optimization
+hyperopt>=0.2.0
+
+# Data Visualization
+matplotlib>=3.5.0
+seaborn>=0.11.0
+
+# Cloud and Storage
+azure-storage-blob>=12.0.0
+
+# Databricks Integration
+databricks-feature-store>=0.4.0
+databricks-sdk>=0.1.0
+
+# Configuration Management
+pyyaml>=6.0.0
+
+# Development and Testing Dependencies (optional - uncomment if needed)
+# pytest>=7.0.0
+# pytest-cov>=4.0.0
+# black>=22.0.0
+# flake8>=4.0.0
+# isort>=5.0.0 
