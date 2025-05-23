@@ -1,0 +1,44 @@
+# Data Configuration
+data:
+  source_path: "/mnt/datalake/raw_data/"
+  processed_path: "/mnt/datalake/processed_data/"
+  feature_table_name: "feature_store.regression_features"
+  target_column: "target"
+  
+# Feature Store Configuration
+feature_store:
+  database_name: "feature_store"
+  table_name: "regression_features"
+  primary_keys: ["id"]
+  timestamp_column: "timestamp"
+
+# Model Configuration
+model:
+  experiment_name: "/Shared/mlops-regression-experiment"
+  model_name: "regression_model"
+  model_stage: "Production"
+  
+# Training Configuration
+training:
+  test_size: 0.2
+  validation_size: 0.2
+  random_state: 42
+  cv_folds: 5
+  
+# Hyperparameter Tuning
+hyperparameters:
+  max_evals: 50
+  algorithms:
+    - "random_forest"
+    - "gradient_boosting"
+    - "linear_regression"
+
+# Monitoring
+monitoring:
+  drift_threshold: 0.1
+  performance_threshold: 0.8
+  
+# Automation
+automation:
+  trigger_path: "/mnt/datalake/trigger/"
+  schedule_cron: "0 2 * * *"  # Daily at 2 AM
