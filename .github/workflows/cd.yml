@@ -1,0 +1,144 @@
+name: CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+        - dev
+        - staging
+        - prod
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  deploy-dev:
+    runs-on: ubuntu-latest
+    name: Deploy to Development
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev')
+    environment: development
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Configure Databricks CLI
+      run: |
+        echo "[dev]" > ~/.databrickscfg
+        echo "host = ${{ secrets.DATABRICKS_HOST_DEV }}" >> ~/.databrickscfg
+        echo "token = ${{ secrets.DATABRICKS_TOKEN_DEV }}" >> ~/.databrickscfg
+        
+    - name: Deploy to dev environment
+      run: |
+        dbx deploy --environment=dev
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_DEV }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_DEV }}
+        
+    - name: Run dev tests
+      run: |
+        dbx launch --environment=dev --job=cris-e2e-ml-pipeline-data-ingestion-dev --as-run-submit --trace
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_DEV }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_DEV }}
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    name: Deploy to Staging
+    needs: [deploy-dev]
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    environment: staging
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Configure Databricks CLI
+      run: |
+        echo "[staging]" > ~/.databrickscfg
+        echo "host = ${{ secrets.DATABRICKS_HOST_STAGING }}" >> ~/.databrickscfg
+        echo "token = ${{ secrets.DATABRICKS_TOKEN_STAGING }}" >> ~/.databrickscfg
+        
+    - name: Deploy to staging environment
+      run: |
+        dbx deploy --environment=staging
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_STAGING }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_STAGING }}
+        
+    - name: Run staging validation tests
+      run: |
+        dbx launch --environment=staging --job=cris-e2e-ml-pipeline-data-ingestion-staging --as-run-submit --trace
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_STAGING }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_STAGING }}
+
+  deploy-prod:
+    runs-on: ubuntu-latest
+    name: Deploy to Production
+    needs: [deploy-staging]
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod')
+    environment: production
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Configure Databricks CLI
+      run: |
+        echo "[prod]" > ~/.databrickscfg
+        echo "host = ${{ secrets.DATABRICKS_HOST_PROD }}" >> ~/.databrickscfg
+        echo "token = ${{ secrets.DATABRICKS_TOKEN_PROD }}" >> ~/.databrickscfg
+        
+    - name: Deploy to production environment
+      run: |
+        dbx deploy --environment=prod
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_PROD }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_PROD }}
+        
+    - name: Create release
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false 
